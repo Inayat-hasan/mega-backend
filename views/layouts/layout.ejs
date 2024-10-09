@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div class="h-screen overflow-y-auto bg-[#121212] text-white">
+      <% if (showHeader !== false) {%>
+        <%- include('../partials/header') %>
+      <%} %>
+        <div class="flex min-h-[calc(100vh-66px)] sm:min-h-[calc(100vh-82px)]">
+          <% if (showAside !== false) {%>
+            <%- include('../partials/aside') %>
+          <%} %>
+          <section class="w-full pb-[70px] sm:ml-[70px] sm:pb-0 lg:ml-0">
+            <%- body %>
+          </section>
+        </div>
+    </div>
+</body>
+</html>

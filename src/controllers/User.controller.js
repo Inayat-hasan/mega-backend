@@ -4,7 +4,8 @@ import { User } from "../models/user.model.js"
 import {uploadOnCloudinary} from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
-import mongoose, { mongo } from "mongoose";
+import mongoose from "mongoose";
+import ejs from 'ejs';
 
 const generateAccessAndRefreshTokens = async(userId) => {
     try {
@@ -35,7 +36,7 @@ const registerUser = asyncHandler( async (req, res) => {
     // return res
 
 
-    const {fullName, email, username, password } = req.body
+    const {fullName, email, username, password } = req.body;
     // console.log("email",email);
 
     if(
@@ -89,9 +90,7 @@ const registerUser = asyncHandler( async (req, res) => {
         throw new ApiError(500, "Something went wrong while registering the user");
     };
 
-    return res.status(201).json(
-        new ApiResponse(200, createdUser, "User registered successfully!")
-    );
+    return res.redirect('/');
 });
 
 const loginUser = asyncHandler(async (req,res) => {
@@ -104,10 +103,10 @@ const loginUser = asyncHandler(async (req,res) => {
     // send response of logged in
 
     const {username , email , password} = req.body;
-    console.log(email);
+    // console.log(req.body);
     
     if (!username && !email) {
-        throw new ApiError(400, "username or email is required")
+        throw new ApiError(400, "username and email is required")
     };
 
     // Here is an alternative of above code based on logic discussed in video:
@@ -140,17 +139,10 @@ const loginUser = asyncHandler(async (req,res) => {
 
     return res
     .status(200)
-    .cookie("accessToken",accessToken, options)
-    .cookie("refreshToken", refreshToken, options)
-    .json(
-        new ApiResponse(
-            200, 
-            {
-                user: loggedInUser, accessToken, refreshToken
-            },
-            "User logged in successfully!"
-        )
-    )
+    .cookie("accessToken", accessToken,options)   
+    .cookie("refreshToken", refreshToken,options) 
+    .redirect('/');
+
 });
 
 const logoutUser = asyncHandler(async(req,res) => {
@@ -180,6 +172,8 @@ const logoutUser = asyncHandler(async(req,res) => {
 
 const refreshAccessToken = asyncHandler(async(req, res) => {
     const incomingRefreshToken =  req.cookies.refreshToken || req.body.refreshToken ;
+
+    console.log(incomingRefreshToken);
 
     if(!incomingRefreshToken) {
         throw new ApiError(401,"Unauthorized request");
@@ -229,6 +223,8 @@ const refreshAccessToken = asyncHandler(async(req, res) => {
 const changeCurrentPassword = asyncHandler(async(req, res) => {
     const {oldPassword, newPassword} = req.body;
 
+    // console.log(oldPassword, newPassword);
+
     const user = await User.findById(req.user?._id);
 
     const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
@@ -255,7 +251,7 @@ const getCurrentUser = asyncHandler(async(req, res) => {
 const updateAccountDetails = asyncHandler(async(req, res) => {
     const {fullName, email} = req.body;
 
-    if(!fullName || !email) {
+    if(!fullName && !email) {
         throw new ApiError(400, "All fields are required");
     };
 

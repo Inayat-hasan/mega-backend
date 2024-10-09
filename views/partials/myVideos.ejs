@@ -1,0 +1,40 @@
+<% if (!videos || !videos.length) { %>
+    <h2>No videos found</h2>
+<% } else { %>
+    <% videos.forEach(video => { %>
+        <div class="w-full">
+            <div class="relative mb-2 w-full pt-[56%]">
+                <div class="absolute inset-0">
+                    <img
+                        src="<%- video.thumbnail %>" 
+                        alt="<%- video.title %>" 
+                        class="h-full w-full"
+                    />
+                </div>
+                <span class="absolute bottom-1 right-1 inline-block rounded bg-black px-1.5 text-sm">
+                    <%- video.duration %>
+                </span>
+            </div>
+            <div class="flex gap-x-2">
+                <div class="h-10 w-10 shrink-0">
+                    <img
+                        src="<%- user.avatar %>" 
+                        alt="<%- user.fullName %>" 
+                        class="h-full w-full rounded-full"
+                    />
+                </div>
+                <div class="w-full">
+                    <h6 class="mb-1 font-semibold">
+                        <%- video.title %>
+                    </h6>
+                    <p class="flex text-sm text-gray-200">
+                        <%- video.views %> Views · <%- moment(video.createdAt).fromNow() %> 
+                    </p>
+                    <p class="text-sm text-gray-200">
+                        <%- user.fullName %>
+                    </p>
+                </div>
+            </div>
+        </div>
+    <% }) %>
+<% } %>
