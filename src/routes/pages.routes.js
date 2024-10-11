@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { getAllVideos } from "../controllers/video.controller.js";
-import video from "fluent-ffmpeg/lib/options/video.js";
+import { getUserPlaylists, getUserVideos } from "../controllers/User.controller.js";
 
 const router = Router();
 
@@ -30,14 +30,12 @@ router.route("/login").get((req, res) => {
     });
 });
 
-router.route("/channel").get(verifyJWT,getAllVideos);
+router.route("/channel/videos").get(verifyJWT,getUserVideos);
+
+router.route('/channel/playlists').get(verifyJWT,getUserPlaylists);
 
 router.route("/videoDetail").get(verifyJWT,(req,res) => {
     res.render('videoDetail');
-});
-
-router.route('/channel/playlist').get(verifyJWT,(req,res) => {
-    res.render('channelPlaylist');
 });
 
 router.route("/channel/playlist/videos").get(verifyJWT,(req,res) => {

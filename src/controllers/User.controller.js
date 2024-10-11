@@ -6,6 +6,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import ejs from 'ejs';
+import moment from "moment";
 
 const generateAccessAndRefreshTokens = async(userId) => {
     try {
@@ -332,7 +333,7 @@ const updateUserCoverImage = asyncHandler(async(req, res) => {
     )
 });
 
-const getUserchannelProfile = asyncHandler(async (req, res) => {
+const getUserChannelProfile = asyncHandler(async (req, res) => {
     const {username} = req.params;
 
     if(!username?.trim()) {
@@ -363,12 +364,16 @@ const getUserchannelProfile = asyncHandler(async (req, res) => {
         },
         {
             $addFields: {
-                subscribersCount: {
-                    $size: "$subscribers"
-                },
-                channelsSubscribedToCount: {
-                    $size: "subscribedTo"
-                },
+              subscribersCount: {
+                $size: {
+                  $ifNull: ["$subscribers", []]
+                }
+              },
+              subscribedToCount: {
+                $size: {
+                  $ifNull: ["$subscribedTo", []]
+                }
+              },
                 isSubscribed: {
                     $cond: {
                         if: {$in: [req.user?._id, "$subscribers.subscriber"]},
@@ -383,7 +388,7 @@ const getUserchannelProfile = asyncHandler(async (req, res) => {
                 fullName: 1,
                 username: 1,
                 subscribersCount: 1,
-                channelsSubscribedToCount: 1,
+                subscribedToCount: 1,
                 isSubscribed: 1,
                 avatar: 1,
                 coverImage: 1,
@@ -391,6 +396,8 @@ const getUserchannelProfile = asyncHandler(async (req, res) => {
             }
         }
     ]);
+
+    // console.log(channel)
 
     if(!channel?.length) {
         throw new ApiError(404, "channel does not exist");
@@ -455,6 +462,565 @@ const getWatchHistory = asyncHandler(async(req, res) => {
     )
 });
 
+const getUserVideos = asyncHandler(async (req, res) => {
+    try {
+      // const pipeline = [
+      //   {
+      //     $match: {
+      //       _id: req.user._id,
+      //     },
+      //   },
+      //   {
+      //     $lookup: {
+      //       from: "videos",
+      //       localField: "_id",
+      //       foreignField: "owner",
+      //       as: "videos",
+      //     },
+      //   },
+      //   {
+      //     $lookup: {
+      //       from: "subscriptions",
+      //       localField: "_id",
+      //       foreignField: "channel",
+      //       as: "subscribers",
+      //     },
+      //   },
+      //   {
+      //     $lookup: {
+      //       from: "subscriptions",
+      //       localField: "_id",
+      //       foreignField: "subscriber",
+      //       as: "subscribedTo",
+      //     },
+      //   },
+      //   {
+      //     $addFields: {
+      //       subscribersCount: {
+      //         $size: {
+      //           $ifNull: ["$subscribers", []]
+      //         }
+      //       },
+      //       subscribedToCount: {
+      //         $size: {
+      //           $ifNull: ["$subscribedTo", []]
+      //         }
+      //       },
+      //         isSubscribed: {
+      //             $cond: {
+      //                 if: {$in: [req.user?._id, "$subscribers.subscriber"]},
+      //                 then: true,
+      //                 else: false
+      //             }
+      //         }
+      //     }
+      //   },
+      //   {
+      //     $project: {
+      //       fullName: 1,
+      //       username: 1,
+      //       avatar: 1,
+      //       coverImage: 1,
+      //       email: 1,
+      //       videos: {
+      //         $map: {
+      //           input: "$videos",
+      //           as: "video",
+      //           in: {
+      //             _id: "$$video._id",
+      //             videoFile: "$$video.videoFile",
+      //             thumbnail: "$$video.thumbnail",
+      //             title: "$$video.title",
+      //             description: "$$video.description",
+      //             duration: "$$video.duration",
+      //             views: "$$video.views",
+      //             isPublished: "$$video.isPublished",
+      //             createdAt: "$$video.createdAt",
+      //           },
+      //         },
+      //       },
+      //       subscribersCount: 1,
+      //       subscribedToCount: 1,
+      //       isSubscribed: 1
+      //     },
+      //   },
+      //   {
+      //     $sort: {
+      //       "videos.createdAt": -1,
+      //     },
+      //   }
+      // ];
+
+
+      if (!req.user) {
+        return res.status(401).json(new ApiError(401, "Unauthorized request"));
+      }
+      
+      const channel = await User.aggregate([
+        {
+          $match: {
+            _id: req.user._id,
+          },
+        },
+        {
+          $lookup: {
+            from: "videos",
+            localField: "_id",
+            foreignField: "owner",
+            as: "videos",
+          },
+        },
+        {
+          $sort: {
+            "videos.createdAt": -1,
+          },
+        },
+        {
+          $lookup: {
+            from: "subscriptions",
+            localField: "_id",
+            foreignField: "channel",
+            as: "subscribers",
+          },
+        },
+        {
+          $lookup: {
+            from: "subscriptions",
+            localField: "_id",
+            foreignField: "subscriber",
+            as: "subscribedTo",
+          },
+        },
+        {
+          $addFields: {
+            subscribersCount: {
+              $size: {
+                $ifNull: ["$subscribers", []]
+              }
+            },
+            subscribedToCount: {
+              $size: {
+                $ifNull: ["$subscribedTo", []]
+              }
+            },
+              isSubscribed: {
+                  $cond: {
+                      if: {$in: [req.user?._id, "$subscribers.subscriber"]},
+                      then: true,
+                      else: false
+                  }
+              }
+          }
+        },
+        {
+          $project: {
+            fullName: 1,
+            username: 1,
+            avatar: 1,
+            coverImage: 1,
+            email: 1,
+            videos: {
+              $map: {
+                input: "$videos",
+                as: "video",
+                in: {
+                  _id: "$$video._id",
+                  videoFile: "$$video.videoFile",
+                  thumbnail: "$$video.thumbnail",
+                  title: "$$video.title",
+                  description: "$$video.description",
+                  duration: "$$video.duration",
+                  views: "$$video.views",
+                  isPublished: "$$video.isPublished",
+                  createdAt: "$$video.createdAt",
+                },
+              },
+            },
+            subscribersCount: 1,
+            subscribedToCount: 1,
+            isSubscribed: 1
+          },
+        }
+      ]);
+      // console.log(channel[0].videos);
+    
+      return res.render('channelVideo', {
+        user: req.user,
+        title: 'My channel videos',
+        showAside: true,
+        showHeader: true,
+        cookies: req.cookies,
+        videos: channel[0].videos,
+        moment: moment,
+        subscribers: channel[0].subscribersCount,
+        subscribed : channel[0].subscribedToCount,
+        isSubscribed: channel[0].isSubscribed
+      });
+  
+      // return res.status(200).json(
+      //   new ApiResponse(200,channel[0], "videos fetched successfully")
+      // );
+  
+  
+    } catch (error) {
+      res.json(new ApiError(500, error.message));
+    }
+});
+
+const getUserPlaylists = asyncHandler(async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json(new ApiError(401, "Unauthorized request"));
+    }
+
+    // const pipeline = [
+    //   {
+    //     $match: { _id: req.user._id },
+    //   },
+    //   {
+    //     $lookup: {
+    //       from: "playlists",
+    //       localField: "_id",
+    //       foreignField: "owner",
+    //       as: "playlists",
+    //     },
+    //   },
+    //   {
+    //     $sort: {
+    //       "playlists.createdAt": -1,
+    //     },
+    //   },
+    //   {
+    //     $lookup: {
+    //       from: "subscriptions",
+    //       localField: "_id",
+    //       foreignField: "channel",
+    //       as: "subscribers",
+    //     },
+    //   },
+    //   {
+    //     $lookup: {
+    //       from: "subscriptions",
+    //       localField: "_id",
+    //       foreignField: "subscriber",
+    //       as: "subscribedTo",
+    //     },
+    //   },
+    //   {
+    //     $addFields: {
+    //       subscribersCount: {
+    //         $size: {
+    //           $ifNull: ["$subscribers", []]
+    //         }
+    //       },
+    //       subscribedToCount: {
+    //         $size: {
+    //           $ifNull: ["$subscribedTo", []]
+    //         }
+    //       },
+    //         isSubscribed: {
+    //             $cond: {
+    //                 if: {$in: [req.user?._id, "$subscribers.subscriber"]},
+    //                 then: true,
+    //                 else: false
+    //             }
+    //         }
+    //     }
+    //   },
+    //   {
+    //     $project: {
+    //       fullName: 1,
+    //       username: 1,
+    //       avatar: 1,
+    //       coverImage: 1,
+    //       email: 1,
+    //       playlists: {
+    //         $map: {
+    //           input: "$playlists",
+    //           as: "playlist",
+    //           in: {
+    //             _id: "$$playlist._id",
+    //             name: "$$playlist.name",
+    //             description: "$$playlist.description",
+    //             videos: "$$playlist.videos",
+    //             createdAt: "$$playlist.createdAt",
+    //           },
+    //         },
+    //       },
+    //       subscribersCount: 1,
+    //       subscribedToCount: 1,
+    //       isSubscribed: 1
+    //     },
+    //   }
+    // ];
+  
+    
+    const channel = await User.aggregate([
+      {
+        $match: { _id: req.user._id },
+      },
+      {
+        $lookup: {
+          from: "playlists",
+          localField: "_id",
+          foreignField: "owner",
+          as: "playlists",
+        },
+      },
+      {
+        $sort: {
+          "playlists.createdAt": -1,
+        },
+      },
+      {
+        $lookup: {
+          from: "subscriptions",
+          localField: "_id",
+          foreignField: "channel",
+          as: "subscribers",
+        },
+      },
+      {
+        $lookup: {
+          from: "subscriptions",
+          localField: "_id",
+          foreignField: "subscriber",
+          as: "subscribedTo",
+        },
+      },
+      {
+        $addFields: {
+          subscribersCount: {
+            $size: {
+              $ifNull: ["$subscribers", []]
+            }
+          },
+          subscribedToCount: {
+            $size: {
+              $ifNull: ["$subscribedTo", []]
+            }
+          },
+            isSubscribed: {
+                $cond: {
+                    if: {$in: [req.user?._id, "$subscribers.subscriber"]},
+                    then: true,
+                    else: false
+                }
+            }
+        }
+      },
+      {
+        $project: {
+          fullName: 1,
+          username: 1,
+          avatar: 1,
+          coverImage: 1,
+          email: 1,
+          playlists: {
+            $map: {
+              input: "$playlists",
+              as: "playlist",
+              in: {
+                _id: "$$playlist._id",
+                name: "$$playlist.name",
+                description: "$$playlist.description",
+                videos: "$$playlist.videos",
+                createdAt: "$$playlist.createdAt",
+                updatedAt: "$$playlist.updatedAt",
+              },
+            },
+          },
+          subscribersCount: 1,
+          subscribedToCount: 1,
+          isSubscribed: 1
+        },
+      }
+    ]);
+
+    return res.render('channelPlaylist', {
+      cookies: req.cookies,
+      title: 'My Channel Playlists',
+      showHeader: true,
+      showAside: true,
+      user: req.user,
+      playlists: channel[0].playlists,
+      moment: moment,
+      subscribers: channel[0].subscribersCount,
+      subscribed : channel[0].subscribedToCount,
+      isSubscribed: channel[0].isSubscribed
+    });
+  
+    // return res.status(200).json(
+    //   new ApiResponse(200,channel[0], "playlist fetched successfully")
+    // );
+});
+
+const getUserTweets = asyncHandler(async (req, res) => {
+    if (!req.user) {
+    return res.status(401).json(new ApiError(401, "Unauthorized request"));
+    }
+
+    // const pipeline = [
+    //   {
+    //     $match: { _id: req.user._id },
+    //   },
+    //   {
+    //     $lookup: {
+    //       from: "tweets",
+    //       localField: "_id",
+    //       foreignField: "owner",
+    //       as: "tweets",
+    //     },
+    //   },
+    //   {
+    //     $sort: {
+    //       "tweets.createdAt": -1,
+    //     },
+    //   },
+    //   {
+    //     $lookup: {
+    //       from: "subscriptions",
+    //       localField: "_id",
+    //       foreignField: "channel",
+    //       as: "subscribers",
+    //     },
+    //   },
+    //   {
+    //     $lookup: {
+    //       from: "subscriptions",
+    //       localField: "_id",
+    //       foreignField: "subscriber",
+    //       as: "subscribedTo",
+    //     },
+    //   },
+    //   {
+    //     $addFields: {
+    //       subscribersCount: {
+    //         $size: {
+    //           $ifNull: ["$subscribers", []]
+    //         }
+    //       },
+    //       subscribedToCount: {
+    //         $size: {
+    //           $ifNull: ["$subscribedTo", []]
+    //         }
+    //       },
+    //         isSubscribed: {
+    //             $cond: {
+    //                 if: {$in: [req.user?._id, "$subscribers.subscriber"]},
+    //                 then: true,
+    //                 else: false
+    //             }
+    //         }
+    //     }
+    //   },
+    //   {
+    //     $project: {
+    //       fullName: 1,
+    //       username: 1,
+    //       avatar: 1,
+    //       coverImage: 1,
+    //       email: 1,
+    //       tweets: {
+    //         $map: {
+    //           input: "$tweets",
+    //           as: "tweet",
+    //           in: {
+    //             _id: "$$tweet._id",
+    //             content: "$$tweet.content",
+    //             createdAt: "$$tweet.createdAt",
+    //           },
+    //         },
+    //       },
+    //       subscribersCount: 1,
+    //       subscribedToCount: 1,
+    //       isSubscribed: 1
+    //     },
+    //   }
+    // ];
+  
+    
+  
+    const channel = await User.aggregate([
+      {
+        $match: { _id: req.user._id },
+      },
+      {
+        $lookup: {
+          from: "tweets",
+          localField: "_id",
+          foreignField: "owner",
+          as: "tweets",
+        },
+      },
+      {
+        $sort: {
+          "tweets.createdAt": -1,
+        },
+      },
+      {
+        $lookup: {
+          from: "subscriptions",
+          localField: "_id",
+          foreignField: "channel",
+          as: "subscribers",
+        },
+      },
+      {
+        $lookup: {
+          from: "subscriptions",
+          localField: "_id",
+          foreignField: "subscriber",
+          as: "subscribedTo",
+        },
+      },
+      {
+        $addFields: {
+          subscribersCount: {
+            $size: {
+              $ifNull: ["$subscribers", []]
+            }
+          },
+          subscribedToCount: {
+            $size: {
+              $ifNull: ["$subscribedTo", []]
+            }
+          },
+            isSubscribed: {
+                $cond: {
+                    if: {$in: [req.user?._id, "$subscribers.subscriber"]},
+                    then: true,
+                    else: false
+                }
+            }
+        }
+      },
+      {
+        $project: {
+          fullName: 1,
+          username: 1,
+          avatar: 1,
+          coverImage: 1,
+          email: 1,
+          tweets: {
+            $map: {
+              input: "$tweets",
+              as: "tweet",
+              in: {
+                _id: "$$tweet._id",
+                content: "$$tweet.content",
+                createdAt: "$$tweet.createdAt",
+              },
+            },
+          },
+          subscribersCount: 1,
+          subscribedToCount: 1,
+          isSubscribed: 1
+        },
+      }
+    ]);
+  
+    return res.status(200).json(new ApiResponse(200,channel[0], "tweets fetched successfully"));
+});
 
 export {
     registerUser,
@@ -466,6 +1032,9 @@ export {
     updateAccountDetails,
     updateUserAvatar,
     updateUserCoverImage,
-    getUserchannelProfile,
-    getWatchHistory
+    getUserChannelProfile,
+    getWatchHistory,
+    getUserVideos,
+    getUserPlaylists,
+    getUserTweets
 };

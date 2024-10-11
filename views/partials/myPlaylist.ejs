@@ -1,0 +1,72 @@
+<%
+if (playlist.length <= 0) {%>
+    <h2>No Playlist found</h2>
+    <%} 
+    else {%>
+        <%
+        playlists.forEach(playlist => {%>
+            <div class="w-full">
+                <div class="relative mb-2 w-full pt-[56%]">
+                    <div class="absolute inset-0">
+                        <img src="https://images.pexels.com/photos/3561339/pexels-photo-3561339.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" alt="React Mastery" class="h-full w-full" />
+                        <div class="absolute inset-x-0 bottom-0">
+                            <div class="relative border-t bg-white/30 p-4 text-white backdrop-blur-sm before:absolute before:inset-0 before:bg-black/40">
+                                <div class="relative z-[1]">
+                                    <p class="flex justify-between">
+                                        <span class="inline-block">
+                                            Playlist
+                                        </span>
+                                        <span class="inline-block">
+                                            12 videos
+                                        </span>
+                                    </p>
+                                    <p class="text-sm text-gray-200">
+                                        100K Views · 2 hours ago
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <h6 class="mb-1 font-semibold">
+                    React Mastery
+                </h6>
+                <p class="flex text-sm text-gray-200">
+                    Master the art of building dynamic user interfaces with React.
+                </p>
+            </div>
+        <%})
+        %>
+    <%}
+%>
+
+<!-- <div class="w-full">
+    <div class="relative mb-2 w-full pt-[56%]">
+        <div class="absolute inset-0">
+            <img src="https://images.pexels.com/photos/3561339/pexels-photo-3561339.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" alt="React Mastery" class="h-full w-full" />
+            <div class="absolute inset-x-0 bottom-0">
+                <div class="relative border-t bg-white/30 p-4 text-white backdrop-blur-sm before:absolute before:inset-0 before:bg-black/40">
+                    <div class="relative z-[1]">
+                        <p class="flex justify-between">
+                            <span class="inline-block">
+                                Playlist
+                            </span>
+                            <span class="inline-block">
+                                12 videos
+                            </span>
+                        </p>
+                        <p class="text-sm text-gray-200">
+                            100K Views · 2 hours ago
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <h6 class="mb-1 font-semibold">
+        React Mastery
+    </h6>
+    <p class="flex text-sm text-gray-200">
+        Master the art of building dynamic user interfaces with React.
+    </p>
+</div> -->

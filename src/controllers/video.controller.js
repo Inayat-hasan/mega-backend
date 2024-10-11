@@ -47,15 +47,7 @@ const getAllVideos = asyncHandler(async (req, res, next) => {
 
     // console.log(videos.docs);
   
-    res.render('myContent', {
-      user: req.user,
-      title: 'My Content',
-      showAside: true,
-      showHeader: true,
-      cookies: req.cookies,
-      videos: videos.docs,
-      moment: moment
-    });
+    res.status(200).json(new ApiResponse(200, videos, "Videos retrieved successfully."));
   } catch (error) {
     console.log('Error in getting videos:', error);
   }
