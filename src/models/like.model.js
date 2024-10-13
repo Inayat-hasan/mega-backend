@@ -15,10 +15,15 @@ const likeSchema = new Schema(
             type: Schema.Types.ObjectId,
             ref: "Tweet"
         },
-        likedBy: {
+        userActivity: {
             type: Schema.Types.ObjectId,
             ref: "User"
         },
+        type: {
+            type: String,
+            enum: ["like", "dislike"],
+            required: true
+        }
     },
     {timestamps: true}
 )

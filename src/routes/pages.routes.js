@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { getAllVideos } from "../controllers/video.controller.js";
-import { getUserPlaylists, getUserVideos } from "../controllers/User.controller.js";
+import { getUserPlaylists, getUserTweets, getUserVideos } from "../controllers/User.controller.js";
 
 const router = Router();
 
@@ -42,9 +42,7 @@ router.route("/channel/playlist/videos").get(verifyJWT,(req,res) => {
     res.render('playlistVideo');
 });
 
-router.route("/channel/tweets").get(verifyJWT,(req, res) => {
-    res.render('channelTweets')
-});
+router.route("/channel/tweets").get(verifyJWT,getUserTweets);
 
 router.route("/channel/subscribers").get(verifyJWT,(req, res) => {
     res.render('channelSubscribers')
