@@ -97,7 +97,9 @@ const publishAVideo = asyncHandler(async (req, res) => {
     owner: req.user._id,
   });
 
-  res.status(201).json(new ApiResponse(201, newVideo, "Video published successfully!"));
+  res.redirect("/channel/videos");
+
+  // res.status(201).json(new ApiResponse(201, newVideo, "Video published successfully!"));
 });
 
 

@@ -1,0 +1,94 @@
+<div class="h-full overflow-auto border bg-[#121212]">
+  <div class="flex items-center justify-between border-b p-4">
+    <h2 class="text-xl font-semibold text-white">Upload Videos</h2>
+    <button
+      type="submit"
+      form="video-upload-form"
+      class="group/btn mr-1 flex w-auto items-center gap-x-2 bg-[#ae7aff] px-3 py-2 text-center font-bold text-black shadow-[5px_5px_0px_0px_#4f4e4e] transition-all duration-150 ease-in-out active:translate-x-[5px] active:translate-y-[5px] active:shadow-[0px_0px_0px_0px_#4f4e4e]"
+    >
+      Save
+    </button>
+  </div>
+
+  <form
+    id="video-upload-form"
+    action="/api/v1/videos/publish"
+    method="POST"
+    enctype="multipart/form-data"
+    class="mx-auto w-full max-w-3xl flex-col gap-y-4 p-4"
+  >
+    <!-- Video File Input -->
+    <div class="w-full border-2 border-dashed px-4 py-12 text-center">
+      <input
+        type="file"
+        id="upload-video"
+        name="videoFile"
+        class="sr-only"
+        accept="video/*"
+        required
+      />
+      <label
+        for="upload-video"
+        class="group/btn mt-4 inline-flex w-auto cursor-pointer items-center gap-x-2 bg-[#ae7aff] px-3 py-2 text-center font-bold text-black shadow-[5px_5px_0px_0px_#4f4e4e]"
+      >
+        Select Video File
+      </label>
+    </div>
+
+    <!-- Thumbnail Input -->
+    <div class="w-full mb-4">
+      <label for="thumbnail" class="mb-1 inline-block text-white"
+        >Thumbnail<sup>*</sup></label
+      >
+      <input
+        id="thumbnail"
+        type="file"
+        name="thumbnail"
+        class="w-full border p-1 file:mr-4 file:border-none file:bg-[#ae7aff] file:px-3 file:py-1.5"
+        accept="image/*"
+        required
+      />
+    </div>
+
+    <!-- Title Input -->
+    <div class="w-full mb-4">
+      <label for="title" class="mb-1 inline-block text-white"
+        >Title<sup>*</sup></label
+      >
+      <input
+        id="title"
+        type="text"
+        name="title"
+        class="w-full border bg-transparent px-2 py-1 text-white outline-none"
+        required
+      />
+    </div>
+
+    <!-- Duration Input -->
+    <div class="w-full mb-4">
+        <label for="duration" class="mb-1 inline-block text-white"
+          >Duration<sup>*</sup></label
+        >
+        <input
+          id="title"
+          type="text"
+          name="duration"
+          class="w-full border bg-transparent px-2 py-1 text-white outline-none"
+          required
+        />
+      </div>
+
+    <!-- Description Input -->
+    <div class="w-full mb-4">
+      <label for="desc" class="mb-1 inline-block text-white"
+        >Description<sup>*</sup></label
+      >
+      <textarea
+        id="desc"
+        name="description"
+        class="h-40 w-full resize-none border bg-transparent px-2 py-1 text-white outline-none"
+        required
+      ></textarea>
+    </div>
+  </form>
+</div>

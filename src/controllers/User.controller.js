@@ -465,6 +465,7 @@ const getWatchHistory = asyncHandler(async (req, res) => {
 
 const getUserVideos = asyncHandler(async (req, res) => {
   try {
+
     // const pipeline = [
     //   {
     //     $match: {
@@ -605,11 +606,13 @@ const getUserVideos = asyncHandler(async (req, res) => {
           },
           isSubscribed: {
             $cond: {
-              if: { $in: [req.user?._id, "$subscribers.subscriber"] },
+              if: {
+                $in: [req.user._id, "$subscribedTo.channel"]
+              },
               then: true,
-              else: false,
-            },
-          },
+              else: false
+            }
+          }
         },
       },
       {
@@ -806,11 +809,13 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
         },
         isSubscribed: {
           $cond: {
-            if: { $in: [req.user?._id, "$subscribers.subscriber"] },
+            if: {
+              $in: [req.user._id, "$subscribedTo.channel"]
+            },
             then: true,
-            else: false,
-          },
-        },
+            else: false
+          }
+        }
       },
     },
     {
@@ -894,9 +899,11 @@ const getUserTweets = asyncHandler(async (req, res) => {
   }
 
   // const pipeline = [
+  //   // Match the user
   //   {
   //     $match: { _id: req.user._id },
   //   },
+  //   // Lookup tweets by user
   //   {
   //     $lookup: {
   //       from: "tweets",
@@ -905,11 +912,13 @@ const getUserTweets = asyncHandler(async (req, res) => {
   //       as: "tweets",
   //     },
   //   },
+  //   // Sort tweets by creation date
   //   {
   //     $sort: {
   //       "tweets.createdAt": -1,
   //     },
   //   },
+  //   // Lookup subscribers
   //   {
   //     $lookup: {
   //       from: "subscriptions",
@@ -918,6 +927,7 @@ const getUserTweets = asyncHandler(async (req, res) => {
   //       as: "subscribers",
   //     },
   //   },
+  //   // Lookup subscriptions
   //   {
   //     $lookup: {
   //       from: "subscriptions",
@@ -926,27 +936,66 @@ const getUserTweets = asyncHandler(async (req, res) => {
   //       as: "subscribedTo",
   //     },
   //   },
+  //   // Add fields for subscriber counts and subscription status
   //   {
   //     $addFields: {
-  //       subscribersCount: {
-  //         $size: {
-  //           $ifNull: ["$subscribers", []]
-  //         }
-  //       },
-  //       subscribedToCount: {
-  //         $size: {
-  //           $ifNull: ["$subscribedTo", []]
-  //         }
-  //       },
-  //         isSubscribed: {
-  //             $cond: {
-  //                 if: {$in: [req.user?._id, "$subscribers.subscriber"]},
-  //                 then: true,
-  //                 else: false
-  //             }
-  //         }
-  //     }
+  //       subscribersCount: { $size: { $ifNull: ["$subscribers", []] } },
+  //       subscribedToCount: { $size: { $ifNull: ["$subscribedTo", []] } },
+  //       isSubscribed: { $in: [req.user._id, "$subscribers.subscriber"] },
+  //     },
   //   },
+  //   // Unwind tweets to process each one individually
+  //   {
+  //     $unwind: "$tweets",
+  //   },
+  //   // Lookup likes for each tweet
+  //   {
+  //     $lookup: {
+  //       from: "likes",
+  //       let: { tweetId: "$tweets._id", userId: req.user._id },
+  //       pipeline: [
+  //         {
+  //           $match: {
+  //             $expr: {
+  //               $and: [
+  //                 { $eq: ["$tweet", "$$tweetId"] },
+  //                 { $eq: ["$userActivity", "$$userId"] },
+  //               ],
+  //             },
+  //           },
+  //         },
+  //         {
+  //           $group: {
+  //             _id: "$tweet",
+  //             likesCount: {
+  //               $sum: { $cond: [{ $eq: ["$type", "like"] }, 1, 0] },
+  //             },
+  //             dislikesCount: {
+  //               $sum: { $cond: [{ $eq: ["$type", "dislike"] }, 1, 0] },
+  //             },
+  //             userReaction: { $first: "$type" }, // Get the user's reaction
+  //           },
+  //         },
+  //       ],
+  //       as: "likesData",
+  //     },
+  //   },
+  //   // Add like and dislike counts to tweets
+  //   {
+  //     $addFields: {
+  //       likesCount: {
+  //         $ifNull: [{ $arrayElemAt: ["$likesData.likesCount", 0] }, 0],
+  //       },
+  //       dislikesCount: {
+  //         $ifNull: [{ $arrayElemAt: ["$likesData.dislikesCount", 0] }, 0],
+  //       },
+  //       userReaction: {
+  //         $ifNull: [{ $arrayElemAt: ["$likesData.userReaction", 0] }, "none"],
+  //       },
+  //     },
+  //   },
+
+  //   // Project final output
   //   {
   //     $project: {
   //       fullName: 1,
@@ -954,22 +1003,32 @@ const getUserTweets = asyncHandler(async (req, res) => {
   //       avatar: 1,
   //       coverImage: 1,
   //       email: 1,
-  //       tweets: {
-  //         $map: {
-  //           input: "$tweets",
-  //           as: "tweet",
-  //           in: {
-  //             _id: "$$tweet._id",
-  //             content: "$$tweet.content",
-  //             createdAt: "$$tweet.createdAt",
-  //           },
-  //         },
-  //       },
+  //       "tweets._id": "$tweets._id",
+  //       "tweets.content": "$tweets.content",
+  //       "tweets.createdAt": "$tweets.createdAt",
+  //       "tweets.likesCount": "$likesCount",
+  //       "tweets.dislikesCount": "$dislikesCount",
+  //       "tweets.userReaction": "$userReaction",
   //       subscribersCount: 1,
   //       subscribedToCount: 1,
-  //       isSubscribed: 1
+  //       isSubscribed: 1,
   //     },
-  //   }
+  //   },
+  //   // Group results to combine tweets under the user
+  //   {
+  //     $group: {
+  //       _id: "$_id",
+  //       fullName: { $first: "$fullName" },
+  //       username: { $first: "$username" },
+  //       avatar: { $first: "$avatar" },
+  //       coverImage: { $first: "$coverImage" },
+  //       email: { $first: "$email" },
+  //       tweets: { $push: "$tweets" },
+  //       subscribersCount: { $first: "$subscribersCount" },
+  //       subscribedToCount: { $first: "$subscribedToCount" },
+  //       isSubscribed: { $first: "$isSubscribed" },
+  //     },
+  //   },
   // ];
 
   const channel = await User.aggregate([
@@ -1015,8 +1074,15 @@ const getUserTweets = asyncHandler(async (req, res) => {
       $addFields: {
         subscribersCount: { $size: { $ifNull: ["$subscribers", []] } },
         subscribedToCount: { $size: { $ifNull: ["$subscribedTo", []] } },
-        isSubscribed: { $in: [req.user._id, "$subscribers.subscriber"] },
-      },
+        isSubscribed: {
+          $cond: {
+            if: {
+              $in: [req.user._id, "$subscribedTo.channel"]
+            },
+            then: true,
+            else: false
+          }
+        }      },
     },
     // Unwind tweets to process each one individually
     {
@@ -1080,6 +1146,7 @@ const getUserTweets = asyncHandler(async (req, res) => {
         "tweets._id": "$tweets._id",
         "tweets.content": "$tweets.content",
         "tweets.createdAt": "$tweets.createdAt",
+        "tweets.updatedAt": "$tweets.updatedAt",
         "tweets.likesCount": "$likesCount",
         "tweets.dislikesCount": "$dislikesCount",
         "tweets.userReaction": "$userReaction",
@@ -1105,22 +1172,155 @@ const getUserTweets = asyncHandler(async (req, res) => {
     },
   ]);
 
-  // return res.render('channelTweets', {
-  //   cookies: req.cookies,
-  //   title: 'My Channel Playlists',
-  //   showHeader: true,
-  //   showAside: true,
-  //   user: req.user,
-  //   tweets: channel[0].tweets,
-  //   moment: moment,
-  //   subscribers: channel[0].subscribersCount,
-  //   subscribed : channel[0].subscribedToCount,
-  //   isSubscribed: channel[0].isSubscribed
-  // });
+  return res.render('channelTweets', {
+    cookies: req.cookies,
+    title: 'My Channel Playlists',
+    showHeader: true,
+    showAside: true,
+    user: req.user,
+    tweets: channel[0].tweets,
+    moment: moment,
+    subscribers: channel[0].subscribersCount,
+    subscribed : channel[0].subscribedToCount,
+    isSubscribed: channel[0].isSubscribed
+  });
 
-  return res
-    .status(200)
-    .json(new ApiResponse(200, channel[0], "tweets fetched successfully"));
+  // return res.status(200).json(new ApiResponse(200, channel[0], "tweets fetched successfully"));
+
+});
+
+const getUserSubcribedTo = asyncHandler(async(req, res) => {
+
+  if (!req.user) {
+    return res.status(401).json(new ApiError(401, "Unauthorized request"));
+  }
+
+  const channel = await User.aggregate([
+    {
+      $match: {
+        _id: req.user._id
+      }
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "channel",
+        as: "subscribers",
+      },
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "subscriber",
+        as: "subscribedTo",
+      },
+    },
+    {
+      $addFields: {
+        subscribersCount: {
+          $size: {
+            $ifNull: ["$subscribers", []],
+          },
+        },
+        subscribedToCount: {
+          $size: {
+            $ifNull: ["$subscribedTo", []],
+          },
+        },
+        isSubscribed: {
+          $cond: {
+            if: {
+              $in: [req.user._id, "$subscribedTo.channel"]
+            },
+            then: true,
+            else: false
+          }
+        }
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "subscribedTo.channel",
+        foreignField: "_id",
+        as: "subscribedUsers"
+      }
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "subscribedUsers._id",
+        foreignField: "channel",
+        as: "userSubscribers"
+      }
+    },
+    {
+      $addFields: {
+        subscribedUsers: {
+          $map: {
+            input: "$subscribedUsers",
+            as: "user",
+            in: {
+              _id: "$$user._id",
+              fullName: "$$user.fullName",
+              avatar: "$$user.avatar",
+              userSubscribersCount: {
+                $size: {
+                  $filter: {
+                    input: "$userSubscribers",
+                    as: "sub",
+                    cond: { $eq: ["$$sub.channel", "$$user._id"] }
+                  }
+                }
+              },
+              isSubscribed: {
+                $cond: {
+                  if: {
+                    $in: ["$$user._id", "$subscribedTo.channel"]
+                  },
+                  then: true,
+                  else: false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      $project: {
+        _id: 1,
+        fullName: 1,
+        username: 1,
+        avatar: 1,
+        coverImage: 1,
+        email: 1,
+        subscribersCount: 1,
+        subscribedToCount: 1,
+        isSubscribed: 1,
+        subscribedUsers: 1,
+      }
+    }
+  ]);
+
+  return res.render('channelSubscribed', {
+    cookies: req.cookies,
+    title: 'My Channel Subscribers',
+    showHeader: true,
+    showAside: true,
+    user: req.user,
+    subscribers: channel[0].subscribersCount,
+    subscribed : channel[0].subscribedToCount,
+    isSubscribed: channel[0].isSubscribed,
+    subscribedUsers: channel[0].subscribedUsers
+  });
+
+  
+
+
+  // return res.status(200).json(new ApiResponse(200, channel[0], "subscribers fetched successfully"));
 });
 
 export {
@@ -1138,4 +1338,5 @@ export {
   getUserVideos,
   getUserPlaylists,
   getUserTweets,
+  getUserSubcribedTo
 };

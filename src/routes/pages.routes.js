@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { getAllVideos } from "../controllers/video.controller.js";
-import { getUserPlaylists, getUserTweets, getUserVideos } from "../controllers/User.controller.js";
+import { getUserPlaylists, getUserSubcribedTo, getUserTweets, getUserVideos } from "../controllers/User.controller.js";
 
 const router = Router();
 
@@ -44,12 +44,16 @@ router.route("/channel/playlist/videos").get(verifyJWT,(req,res) => {
 
 router.route("/channel/tweets").get(verifyJWT,getUserTweets);
 
-router.route("/channel/subscribers").get(verifyJWT,(req, res) => {
-    res.render('channelSubscribers')
-});
+router.route("/channel/subscribed").get(verifyJWT,getUserSubcribedTo);
 
-router.route("/channel/uploadvideo").get(verifyJWT,(req, res) => {
-    res.render('uploadVideo');
+router.route("/upload/video").get(verifyJWT,(req, res) => {
+    res.render('uploadVideo',{
+        title: 'Upload Video',
+        showHeader: true,
+        showAside: true,
+        cookies: req.cookies,
+        user: req.user
+    });
 });
 
 router.route('/channel/uploadvideo/popup').get(verifyJWT,(req, res) => {

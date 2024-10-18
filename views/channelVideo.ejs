@@ -39,14 +39,11 @@
                       d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z"></path>
                   </svg>
                 </span>
-                <%
-                if(isSubscribed === true){%>
-                  <span class="group-focus/btn:hidden">Subscribe</span>
-                <%}
-                if(isSubscribed === false){%>
-                  <span class="group-focus/btn:block">Subscribed</span>
-                <%}
-                %>
+                <% if (isSubscribed === true) { %>
+                  <span>Subscribed</span>
+                <% } else { %>
+                  <span>Subscribe</span>
+                <% } %>
                 <!-- <span class="group-focus/btn:hidden">Subscribe</span>
                 <span class="hidden group-focus/btn:block">Subscribed</span> -->
               </button>
@@ -55,23 +52,33 @@
         </div>
         <ul class="no-scrollbar sticky top-[66px] z-[2] flex flex-row gap-x-2 overflow-auto border-b-2 border-gray-400 bg-[#121212] py-2 sm:top-[82px]">
           <li class="w-full">
-            <button class="w-full border-b-2 border-[#ae7aff] bg-white px-3 py-1.5 text-[#ae7aff]">
             <a href="/channel/videos">
-              Videos
+              <button class="w-full border-b-2 border-[#ae7aff] bg-white px-3 py-1.5 text-[#ae7aff]">
+                Videos
+              </button>
             </a>
-          </button>
-        </li>
-          <li class="w-full">
-            <button class="w-full border-b-2 border-transparent px-3 py-1.5 text-gray-400">
-              <a href="/channel/playlists">Playlist</a>
-            </button>
           </li>
           <li class="w-full">
-            <button class="w-full border-b-2 border-transparent px-3 py-1.5 text-gray-400">
-              <a href="/channel/tweets">Tweets</a>
-            </button>
+            <a href="/channel/playlists">
+              <button class="w-full border-b-2 border-transparent px-3 py-1.5 text-gray-400">
+                Playlist
+              </button>
+            </a>
           </li>
-          <li class="w-full"><button class="w-full border-b-2 border-transparent px-3 py-1.5 text-gray-400">Subscribed</button></li>
+          <li class="w-full">
+            <a href="/channel/tweets">
+              <button class="w-full border-b-2 border-transparent px-3 py-1.5 text-gray-400">
+                Tweets
+              </button>
+            </a>
+          </li>
+          <li class="w-full">
+            <a href="/channel/subscribed">
+              <button class="w-full border-b-2 border-transparent px-3 py-1.5 text-gray-400">
+                Subscribed
+              </button>
+            </a>
+          </li>
         </ul>
         <div class="grid grid-cols-[repeat(auto-fit,_minmax(300px,_1fr))] gap-4 pt-2">
           <%- include('partials/myVideos', { videos: videos, user: user, moment: moment }) %>

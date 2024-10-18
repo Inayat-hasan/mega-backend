@@ -1,0 +1,28 @@
+<% if(subscribedUsers.length <= 0) {%>
+    <h2>No subscribed user Found</h2>
+  <%} else {%>
+    <% subscribedUsers.forEach(subscriber => {%>
+        <div class="flex w-full justify-between">
+            <div class="flex items-center gap-x-2">
+                <div class="h-14 w-14 shrink-0">
+                    <img src="<%- user.avatar %>" alt="<%- user.avatar %>" class="h-full w-full rounded-full">
+                </div>
+                <div class="block">
+                    <h6 class="font-semibold"><%- subscriber.fullName %></h6>
+                    <p class="text-sm text-gray-300"><%- subscriber.userSubscribersCount %> subscribers</p>
+                </div>
+            </div>
+            <div class="block">
+                <button class="px-3 py-2 text-black bg-[#ae7aff] focus:bg-white">
+                    <% if(subscriber.isSubscribed === true) { %>
+                        <span>Subscribed</span>                    
+                    <% } else { %>
+                        <span>Subscribe</span>
+                    <% } %>
+                </button>
+            </div>
+        </div>
+    <%})
+    %>
+  <%}
+  %>
